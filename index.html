@@ -835,18 +835,29 @@ async function loadData(){
     const text=await res.text();
     let raw;
     try{ raw=JSON.parse(text); }catch(e){ throw new Error('Bad JSON: '+text.substring(0,200)); }
+    // Build a case-insensitive key lookup for each raw product
+    function getPriceField(r,colName){
+      const cn=colName.toLowerCase().trim();
+      const key=Object.keys(r).find(k=>k.toLowerCase().trim()===cn);
+      return key?(r[key]||'').toString().trim():'';
+    }
     allProducts=raw.map(r=>({
       img:(r.img||'').toString().trim(),
       name:cleanName(r.name),
       rate:r.rate,
       cat:(r.cat||'').toString().trim(),
       code:(r.code||'').toString().trim(),
-      'whole sale deeler price':(r['whole sale deeler price']||'').toString().trim(),
-      'sub dealer':(r['sub dealer']||'').toString().trim(),
-      'retailer':(r['retailer']||'').toString().trim(),
-      'end user':(r['end user']||'').toString().trim()
+      'whole sale deeler price':getPriceField(r,'whole sale deeler price'),
+      'sub dealer':getPriceField(r,'sub dealer'),
+      'retailer':getPriceField(r,'retailer'),
+      'end user':getPriceField(r,'end user')
     })).filter(p=>p.name&&p.name.toLowerCase()!=='cellimage'&&p.img&&p.img.startsWith('http'));
     console.log('Loaded',allProducts.length,'products');
+    if(allProducts.length>0){
+      const sample=allProducts[0];
+      console.log('Sample product keys:',Object.keys(sample));
+      console.log('Price value:',sample[PRICE_COLUMN]);
+    }
   }catch(e){
     console.error('Sheet load failed:',e);
     // Show error in catalog
@@ -963,8 +974,8 @@ function addParticles(selector,count){
   el.appendChild(pc);
 }
 function initParticles(){
-  addParticles('.hero',80);
-  addParticles('.b2b-section',45);
+  addParticles('.hero',30);
+  addParticles('.b2b-section',15);
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
