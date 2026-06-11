@@ -838,15 +838,22 @@ async function loadData(){
     const text=await res.text();
     let raw;
     try{ raw=JSON.parse(text); }catch(e){ throw new Error('Bad JSON: '+text.substring(0,200)); }
-    allProducts=raw.map(r=>({
-      img:(r.img||'').toString().trim(),
-      name:cleanName(r.name),
-      rate:r.rate,
-      cat:(r.cat||'').toString().trim(),
-      code:(r.code||'').toString().trim(),
-      price:(()=>{const col=PRICE_COLUMN.toLowerCase().trim();const key=Object.keys(r).find(k=>k.toLowerCase().trim()===col);return key?(r[key]||'').toString().trim():'';})()    
-    })).filter(p=>p.name&&p.name.toLowerCase()!=='cellimage'&&p.img&&p.img.startsWith('http'));
+    allProducts=raw.map(r=>{
+      // Get price: try exact key first, then case-insensitive
+      let price='';
+      if(r[PRICE_COLUMN]!==undefined) price=(r[PRICE_COLUMN]||'').toString().trim();
+      else{const col=PRICE_COLUMN.toLowerCase().trim();const key=Object.keys(r).find(k=>k.toLowerCase().trim()===col);if(key) price=(r[key]||'').toString().trim();}
+      return {
+        img:(r.img||'').toString().trim(),
+        name:cleanName(r.name),
+        rate:(r.rate||'').toString().trim(),
+        cat:(r.cat||'').toString().trim(),
+        code:(r.code||'').toString().trim(),
+        price:price
+      };
+    }).filter(p=>p.name&&p.img&&p.img.startsWith('http'));
     console.log('Loaded',allProducts.length,'products');
+    console.log('Sample price check - PRICE_COLUMN:',PRICE_COLUMN,'| price:',allProducts[0]&&allProducts[0].price,'| keys:',allProducts[0]&&Object.keys(allProducts[0]));
   }catch(e){
     console.error('Sheet load failed:',e);
     // Show error in catalog
